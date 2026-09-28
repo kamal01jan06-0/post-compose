@@ -5,29 +5,32 @@ function PostComposer() {
   // 1. State for selected platform (default: Twitter)
   const [platform, setPlatform] = useState("Twitter");
 
-  // 2. State for post content (controlled textarea)
+  // 2. State for post content (controlled component)
   const [post, setPost] = useState("");
 
-  // 3. State for submission feedback message
+  // 3. State for post publish status banner
   const [successMessage, setSuccessMessage] = useState("");
 
   // Determine character limit dynamically based on selected platform
   const limit = platform === "Twitter" ? 280 : 3000;
 
-  // Validation checks
+  // Validation logic
   const isExceeded = post.length > limit;
   const isEmpty = post.trim().length === 0;
   const isButtonDisabled = isEmpty || isExceeded;
+
+  // Calculate usage percentage for progress bar
+  const usagePercentage = Math.min((post.length / limit) * 100, 100);
 
   // Handle post submission
   const handlePost = (e) => {
     e.preventDefault();
     if (!isButtonDisabled) {
-      setSuccessMessage(`Your post has been successfully created for ${platform}!`);
+      setSuccessMessage(`✨ Post published successfully to ${platform}!`);
     }
   };
 
-  // Handle platform change
+  // Handle platform dropdown change
   const handlePlatformChange = (e) => {
     setPlatform(e.target.value);
     setSuccessMessage("");
@@ -41,31 +44,50 @@ function PostComposer() {
     }
   };
 
+  // Clear text
+  const handleClear = () => {
+    setPost("");
+    setSuccessMessage("");
+  };
+
   return (
-    <div className="composer-card">
-      <h1 className="app-title">Post Composer</h1>
-      
+    <div className={`composer-card platform-${platform.toLowerCase()}`}>
+      {/* Header with Title and Platform Badge */}
+      <div className="card-header">
+        <div className="title-wrapper">
+          <h1 className="app-title">Post Composer</h1>
+          <span className={`platform-badge ${platform.toLowerCase()}`}>
+            {platform === "Twitter" ? "𝕏 Twitter" : "in LinkedIn"}
+          </span>
+        </div>
+        <p className="app-subtitle">Compose, validate, and preview your posts before publishing.</p>
+      </div>
+
+      {/* Success Notification */}
       {successMessage && (
         <div className="success-banner">
-          <span>✓</span> {successMessage}
+          <span className="success-icon">✓</span>
+          <span>{successMessage}</span>
         </div>
       )}
 
       <form onSubmit={handlePost}>
-        {/* Platform Selection Dropdown */}
+        {/* Platform Selection */}
         <div className="form-group">
           <label htmlFor="platform" className="form-label">
             Select Platform:
           </label>
-          <select
-            id="platform"
-            value={platform}
-            onChange={handlePlatformChange}
-            className="select-dropdown"
-          >
-            <option value="Twitter">Twitter</option>
-            <option value="LinkedIn">LinkedIn</option>
-          </select>
+          <div className="select-container">
+            <select
+              id="platform"
+              value={platform}
+              onChange={handlePlatformChange}
+              className="select-dropdown"
+            >
+              <option value="Twitter">Twitter (280 characters limit)</option>
+              <option value="LinkedIn">LinkedIn (3000 characters limit)</option>
+            </select>
+          </div>
         </div>
 
         {/* Textarea (Controlled Component) */}
@@ -73,32 +95,59 @@ function PostComposer() {
           <label htmlFor="postContent" className="form-label">
             Write your post:
           </label>
-          <textarea
-            id="postContent"
-            value={post}
-            onChange={handlePostChange}
-            placeholder="Write your post here..."
-            rows="6"
-            className={`post-textarea ${isExceeded ? 'textarea-error' : ''}`}
+          <div className="textarea-wrapper">
+            <textarea
+              id="postContent"
+              value={post}
+              onChange={handlePostChange}
+              placeholder="Write your post here..."
+              rows="6"
+              className={`post-textarea ${isExceeded ? 'textarea-error' : ''}`}
+            />
+          </div>
+        </div>
+
+        {/* Progress Bar Visualizer */}
+        <div className="progress-track">
+          <div
+            className={`progress-fill ${isExceeded ? 'progress-exceeded' : ''}`}
+            style={{ width: `${usagePercentage}%` }}
           />
         </div>
 
-        {/* Character Count Display */}
+        {/* Dynamic Character Count Row */}
         <div className="counter-row">
-          <span className={`char-count ${isExceeded ? 'count-red' : ''}`}>
-            Characters: {post.length} / {limit}
+          <div className="counter-info">
+            <span className={`char-count ${isExceeded ? 'count-red' : ''}`}>
+              Characters: {post.length} / {limit}
+            </span>
+          </div>
+          <span className={`char-remaining ${isExceeded ? 'remaining-negative' : ''}`}>
+            {limit - post.length >= 0 
+              ? `${limit - post.length} left` 
+              : `${post.length - limit} over limit`}
           </span>
         </div>
 
         {/* Error Message when limit is exceeded */}
         {isExceeded && (
           <div className="error-message">
-            Your post exceeds the {limit} character limit for {platform}.
+            <span className="error-icon">⚠️</span>
+            <span>Your post exceeds the {limit} character limit for {platform}.</span>
           </div>
         )}
 
-        {/* Post Action Button */}
+        {/* Action Buttons */}
         <div className="button-wrapper">
+          {post.length > 0 && (
+            <button
+              type="button"
+              onClick={handleClear}
+              className="clear-button"
+            >
+              Clear
+            </button>
+          )}
           <button
             type="submit"
             disabled={isButtonDisabled}
